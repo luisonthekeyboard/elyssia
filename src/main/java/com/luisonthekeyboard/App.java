@@ -1,10 +1,12 @@
 package com.luisonthekeyboard;
 
 import org.apache.commons.io.input.Tailer;
-import org.apache.commons.io.input.TailerListener;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Hello world!
@@ -12,15 +14,45 @@ import java.io.IOException;
 public class App {
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        System.out.println("Hello World!");
+        long start = System.nanoTime();
+        Map<String, Tailer> tailers = new HashMap<>();
+        WatchService watchService = FileSystems.getDefault().newWatchService();
 
-        TailerListener listener = new MyTailerListener();
-        //File file = new File("C:\\Users\\Luis\\code\\elyssia\\test.log");
-        File file = new File("C:\\Users\\Luis\\Saved Games\\Frontier Developments\\Elite Dangerous\\Journal.2022-09-03T170423.01.log");
-        Tailer tailer = Tailer.create(file, listener, 1000);
+        String pathForSavedGames = "C:\\Users\\Luis\\Saved Games\\Frontier Developments\\Elite Dangerous\\";
+        Path path = Paths.get(pathForSavedGames);
+        path.register(
+                watchService,
+                StandardWatchEventKinds.ENTRY_CREATE,
+                StandardWatchEventKinds.ENTRY_DELETE,
+                StandardWatchEventKinds.ENTRY_MODIFY);
 
-        while (true) {
-            //no op
+        WatchKey key;
+        while ((key = watchService.take()) != null) {
+
+            for (WatchEvent<?> event : key.pollEvents()) {
+
+                if (event.kind().type().equals(Path.class)) {
+
+                    WatchEvent<Path> eventAsPath = (WatchEvent<Path>) event;
+                    String filename =  eventAsPath.context().toString();
+
+                    System.out.println("Event kind:" + eventAsPath.kind() + ". File affected: " + filename + ".");
+
+                    if (filename.startsWith("Journal") && !tailers.containsKey(filename)) {
+
+                        tailers.put(
+                                filename,
+                                Tailer.create(
+                                        new File(pathForSavedGames + filename),
+                                        new EliteJournalTailer(start),
+                                        1000,
+                                        false));
+
+                    }
+                }
+            }
+
+            key.reset();
         }
     }
 }
