@@ -36,8 +36,6 @@ public class App {
                     WatchEvent<Path> eventAsPath = (WatchEvent<Path>) event;
                     String filename =  eventAsPath.context().toString();
 
-                    System.out.println("Event kind:" + eventAsPath.kind() + ". File affected: " + filename + ".");
-
                     if (filename.startsWith("Journal") && !tailers.containsKey(filename)) {
 
                         tailers.put(

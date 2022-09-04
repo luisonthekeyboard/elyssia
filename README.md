@@ -7,6 +7,21 @@ Other questions I hope to answer by the end of this journey include:
 - If we scan the most profitable system bodies, how long does it take to get to a certain amount of money;
 - If we want to keep this infrastructure on a personal AWS account, how much does it cost;
 
+## Next steps
+
+- the processes inside each branch of the enhanced switch, should be converted to some sort of generator classes, or decorator classes, an event abstraction on top of text events
+- events might need to go into a queue, where I push them until I exit the system, and when I exit system I pull them and write them into dynamoDB
+  - I need to pull them in order
+- also, the event to end a session should not be shutdown, but exit to main menu.
+  - because I can exit to main menu, and then start again. or the game can crash and send me to the main menu
+- I might have to assume a happy path wrt to order of events, i.e.:
+  - we are well-behaved, and we will not exit the FSS until we have fully scanned everything
+  - we calculate the time for the first DSS by the time of the last music change out of the DSS
+    - after the first one, time for DSS is basically the time between DSSs
+  - we assume that no one will partially FSS a sytem and then engage in DSSing
+  - or to make it more exact, we make sure the system doesn't calculate stupid values for these times
+- ultimately, there's many possible flows of events when scanning a system for exploration. I'll have to find a balance between being complete and working.
+
 ## Events and their semantics
 
 `StartJump` -- Signals that the jump has started, tells me where I'm going to.
@@ -295,3 +310,4 @@ And if we exit the game normally, we'll trigger a `Shutdown` event.
 `Shutdown` will also mean the end of a system visit, in particular the last system visited in a session.
 
 Otherwise, system visits are enclosed in `StartJump` events.
+
